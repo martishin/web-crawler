@@ -3,7 +3,7 @@ services:
     image: postgres:16
     restart: always
     environment:
-      POSTGRES_DB: local
+      POSTGRES_DB: crawler
       POSTGRES_USER: root
       POSTGRES_PASSWORD: 1234
     ports:
@@ -15,6 +15,7 @@ services:
       retries: 30
     volumes:
       - pg_data:/var/lib/postgresql/data
+      - ./docker/postgres:/docker-entrypoint-initdb.d
 
   api:
     image: web-crawler

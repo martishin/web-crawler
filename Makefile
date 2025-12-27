@@ -24,12 +24,6 @@ deps: tidy
 sqlc-generate: tools
 	$(SQLC) generate
 
-db-up:
-	docker compose up -d db
-
-db-down:
-	docker compose down
-
 # Uses PG_DSN from your environment or .env (godotenv/autoload doesn't apply to Make)
 migrate-up: tools
 	$(MIGRATE) -path migrations -database "$$PG_DSN" up
@@ -37,17 +31,35 @@ migrate-up: tools
 migrate-down: tools
 	$(MIGRATE) -path migrations -database "$$PG_DSN" down 1
 
+build:
+	go build -o bin/crawler cmd/api/main.go
+
 run-api: deps sqlc-generate
-	go run ./cmd/api
+	go run ./cmd/api --crawl-interval=10m
 
-crawl: deps sqlc-generate
-	go run ./cmd/crawler --once
+db-up:
+	docker compose up -d db
 
-start-all:
+db-down:
+	docker compose stop db
+
+db-down-wipe:
+	docker compose stop db
+	docker compose rm -f db
+	docker volume rm db_data || true
+
+all-up:
 	docker compose up -d
 
-stop-all:
+all-down:
 	docker compose down
+
+all-down-wipe:
+	docker compose down -v
 
 logs:
 	docker compose logs -f
+
+db-create:
+	psql "postgres://$$PG_USER:$$PG_PASSWORD@localhost:5432/postgres?sslmode=disable" \
+	  -c "CREATE DATABASE crawler;" || true

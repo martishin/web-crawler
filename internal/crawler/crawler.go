@@ -84,6 +84,8 @@ func (c *Crawler) Crawl(ctx context.Context, minTime, maxTime time.Time) (*Resul
 
 	// Producer: walk list pages
 	pageURL := startURL
+
+outer:
 	for page := 0; page < c.cfg.MaxPages && pageURL != ""; page++ {
 		lp, err := c.fetchListPage(ctx, pageURL)
 		if err != nil {
@@ -97,11 +99,11 @@ func (c *Crawler) Crawl(ctx context.Context, minTime, maxTime time.Time) (*Resul
 			select {
 			case jobs <- postURL:
 			case <-ctx.Done():
-				break
+				break outer
 			}
 		}
 		if lp.NextURL == "" || lp.NextURL == pageURL {
-			break
+			break outer
 		}
 		pageURL = lp.NextURL
 		select {
@@ -156,7 +158,8 @@ func (c *Crawler) processPost(ctx context.Context, postURL string, minTime, maxT
 		return errors.New("could not parse published time")
 	}
 
-	if pp.PublishedAt.Before(minTime) || pp.PublishedAt.After(maxTime.Add(24*time.Hour)) {
+	pub := pp.PublishedAt.In(c.loc)
+	if pub.Before(minTime) || pub.After(maxTime) {
 		atomic.AddInt64(&res.Older, 1)
 		return nil
 	}

@@ -38,11 +38,17 @@ func (s *Service) IDF(ctx context.Context, word string, start, end time.Time) (f
 		return 0, 0, 0, repository.ErrWordNotFound
 	}
 
-	// Normalize similarly to crawler: stem as russian by default (Habr RU is common).
-	stemmed := util.Stem(word, "russian")
-	if stemmed == "" {
-		stemmed = word
+	lang := util.DetectLang(word)
+
+	var term string
+	if lang == "russian" {
+		term = util.NormalizeRussian(word)
+	} else {
+		term = util.StemOrIdentity(word, lang)
+	}
+	if term == "" {
+		term = word
 	}
 
-	return s.repo.IDF(ctx, stemmed, start, end)
+	return s.repo.IDF(ctx, term, start, end)
 }

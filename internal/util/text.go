@@ -77,10 +77,17 @@ func StemOrIdentity(token, language string) string {
 }
 
 // TermCounts normalizes + stems all tokens and returns a term -> count map.
+// For Russian it uses morph-based lemmatization; for others it uses Snowball stemmer.
 func TermCounts(text, language string) map[string]int {
 	counts := make(map[string]int)
 	for _, tok := range ExtractTokens(text) {
-		term := StemOrIdentity(tok, language)
+		var term string
+		switch language {
+		case "russian":
+			term = NormalizeRussian(tok)
+		default:
+			term = StemOrIdentity(tok, language)
+		}
 		if term == "" {
 			continue
 		}
