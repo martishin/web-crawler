@@ -57,8 +57,3 @@ make tidy
 ```bash
 make run-api
 ```
-
-4) Or run crawler once:
-```bash
-make crawl
-```
